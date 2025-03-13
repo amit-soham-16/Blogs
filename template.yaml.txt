@@ -1,0 +1,144 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy Spring Boot + Flask with API Gateway
+
+Resources:
+  #EC2 Instance for Spring Boot (Java)
+  SpringBootEC2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-053b0d53c279acc90  # Ubuntu 22.04 AMI (change as needed)
+      KeyName: your-keypair-name  # Replace with  EC2 key pair
+      SecurityGroups:
+        - !Ref AppSecurityGroup
+      Tags:
+        - Key: Name
+          Value: SpringBoot-Server
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo apt update -y
+          sudo apt install openjdk-17-jdk -y
+          sudo apt install nginx -y
+          sudo ufw allow 8080
+          sudo aws s3 cp s3://your-s3-bucket/Blogging-0.0.1-SNAPSHOT.jar /home/ubuntu/app.jar
+          nohup java -jar /home/ubuntu/app.jar > /home/ubuntu/app.log 2>&1 &
+
+  #EC2 Instance for Flask (Python/spaCy)
+  FlaskEC2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-053b0d53c279acc90  # Ubuntu 22.04 AMI
+      KeyName: your-keypair-name  #  Replace with EC2 key pair
+      SecurityGroups:
+        - !Ref AppSecurityGroup
+      Tags:
+        - Key: Name
+          Value: Flask-Server
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo apt update -y
+          sudo apt install python3 python3-pip -y
+          pip3 install flask spacy
+          python3 -m spacy download en_core_web_sm
+          sudo ufw allow 5000
+          echo "FLASK_APP=/home/ubuntu/app.py" >> ~/.bashrc
+          nohup python3 /home/ubuntu/app.py > /home/ubuntu/app.log 2>&1 &
+
+  #Security Group for EC2 Instances
+  AppSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Allow traffic to EC2 instances"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0  # Allow SSH (Modify as needed)
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0  # Allow Spring Boot API
+        - IpProtocol: tcp
+          FromPort: 5000
+          ToPort: 5000
+          CidrIp: 0.0.0.0/0  # Allow Flask API
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0  # Allow HTTP (for API Gateway)
+
+  #API Gateway to Route Requests to EC2
+  ApiGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: BloggingAPI
+      Description: API Gateway for Spring Boot and Flask
+
+  FlaskResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt ApiGateway.RootResourceId
+      PathPart: summarize
+      RestApiId: !Ref ApiGateway
+
+  FlaskMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref FlaskResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: HTTP
+        IntegrationHttpMethod: POST
+        Uri: !Sub "http://${FlaskEC2.PublicIp}:5000/summarize"
+        IntegrationResponses:
+          - StatusCode: "200"
+      MethodResponses:
+        - StatusCode: "200"
+
+  SpringBootResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt ApiGateway.RootResourceId
+      PathPart: blogs
+      RestApiId: !Ref ApiGateway
+
+  SpringBootMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref SpringBootResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: HTTP
+        IntegrationHttpMethod: POST
+        Uri: !Sub "http://${SpringBootEC2.PublicIp}:8080/api/blogs/summarize"
+        IntegrationResponses:
+          - StatusCode: "200"
+      MethodResponses:
+        - StatusCode: "200"
+
+  #Deploy API Gateway
+  ApiGatewayDeployment:
+    Type: AWS::ApiGateway::Deployment
+    Properties:
+      RestApiId: !Ref ApiGateway
+      StageName: prod
+
+Outputs:
+  SpringBootEC2PublicIP:
+    Description: "Spring Boot EC2 Public IP"
+    Value: !GetAtt SpringBootEC2.PublicIp
+
+  FlaskEC2PublicIP:
+    Description: "Flask EC2 Public IP"
+    Value: !GetAtt FlaskEC2.PublicIp
+
+  ApiGatewayInvokeURL:
+    Description: "API Gateway Invoke URL"
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/prod"
