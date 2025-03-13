@@ -128,10 +128,7 @@ We welcome contributions! If you'd like to contribute, please follow these steps
 5. **Wait for review & merge** by the maintainers.
 
 ## Acknowledgments
-This project was built as part of an assignment under **KoffeClan**. Special thanks to:
-- **Mentors & Instructors** for their guidance and insights.
-- **Contributors** for their valuable inputs and code reviews.
-- **Open-source community** for the amazing tools and libraries used in this project.
+This project is a self-assessment assignment aimed at refining backend development, AI integration, and AWS deployment skills. It follows industry best practices to improve software design and cloud deployment capabilities.
 
 ## Contact
 For any queries or feedback, please reach out:
