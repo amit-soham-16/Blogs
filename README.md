@@ -86,7 +86,7 @@ python app.py  # Start Flask service at http://127.0.0.1:5000
 | **GET** | `/api/blogs/{id}` | Get a single blog post by ID |
 | **POST** | `/api/blogs/summarize` | Get a summary using spaCy NLP |
 
-## Deployment on AWS (Not Deployed Yet)
+## Deployment on AWS 
 The service is designed to be deployed on **AWS EC2 with API Gateway and Docker**.
 A **CloudFormation template (`template.yaml`)** is provided to automate the deployment.
 
@@ -103,7 +103,7 @@ A **CloudFormation template (`template.yaml`)** is provided to automate the depl
    java -jar target/Blogging-0.0.1-SNAPSHOT.jar
    ```
 
-## AWS CloudFormation Deployment (Not Deployed Due to Financial Limitations)
+## AWS CloudFormation Deployment 
 A **CloudFormation template (`template.yaml`)** is included in this repository to automate the AWS deployment process.
 
 ### CloudFormation Deployment Steps
