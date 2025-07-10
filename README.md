@@ -3,7 +3,7 @@
 A Project Assignment under **KoffeClan**
 
 ## Overview
-The **Blogging Backend Service** is a backend system built using **Java Spring Boot** with **Spring Data JPA** and **MySQL** for database management. It integrates an **AI-powered text summarization feature**, leveraging **spaCy NLP**, served via a Flask API.
+**SummarEase : Blogging Backend Service** is a backend system built using **Java Spring Boot** with **Spring Data JPA** and **MySQL** for database management. It integrates an **AI-powered text summarization feature**, leveraging **spaCy NLP**, served via a Flask API.
 
 This project provides RESTful APIs that enable users to:
 - **Create blogs** with a title, content, author, and timestamp.
