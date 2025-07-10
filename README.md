@@ -1,4 +1,4 @@
-# Blogging Backend Service
+#  SummarEase : AI-powered blog summarizer 
 
 A Project Assignment under **KoffeClan**
 
